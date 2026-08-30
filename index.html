@@ -60,7 +60,7 @@
 </div>
 
 <script>
-let trainMeta=null, berthData=[], trainList=[], trainListError=false, haltList=[], selectedBoardingCode='', activeStatus='all';
+let trainMeta=null, berthData=[], trainList=[], trainListError=false, haltList=[], routeStations=[], selectedBoardingCode='', activeStatus='all';
 
 function trainNumber(value){
  const match=String(value).match(/^\s*(\d{5})/);
@@ -134,6 +134,7 @@ async function selectTrain(train){
   const r=await fetch(`https://api.railradar.in/app/v1/trains/${number}?haltsOnly=true`);
   if(!r.ok) throw new Error('Station list could not be loaded');
   const data=await r.json();
+  routeStations=(data.data?.route||[]).filter(stop=>stop.station?.code).map(stop=>({code:stop.station.code,name:stop.station.name}));
   const halts=(data.data?.route||[]).filter(stop=>stop.isHalt&&stop.station?.code);
   if(!halts.length) throw new Error('No halts found');
   haltList=halts.map(stop=>({code:stop.station.code,name:stop.station.name}));
@@ -182,14 +183,28 @@ function populateFilterStations(){
 function segmentsForFilter(berth){
  const start=filterFrom.value, end=filterTo.value;
  if(!start&&!end) return berth.bsd;
- const codes=haltList.map(stop=>stop.code);
+ const codes=routeStations.map(stop=>stop.code);
  const startIndex=start ? codes.indexOf(start) : 0;
  const endIndex=end ? codes.indexOf(end) : codes.length-1;
  if(startIndex<0||endIndex<startIndex) return [];
  return berth.bsd.filter(segment=>{
-  const fromIndex=codes.indexOf(segment.from), toIndex=codes.indexOf(segment.to);
-  return fromIndex>=startIndex&&toIndex<=endIndex;
+  const from=String(segment.from||segment.fromStation||segment.fromStationCode||'').trim();
+  const to=String(segment.to||segment.toStation||segment.toStationCode||'').trim();
+  const fromIndex=codes.indexOf(from), toIndex=codes.indexOf(to);
+  // A berth record applies to every route leg it overlaps. This clips the
+  // result to the chosen journey instead of requiring matching endpoints.
+  return fromIndex>=0&&toIndex>=0&&fromIndex<endIndex&&toIndex>startIndex;
  });
+}
+
+function displaySegmentBounds(segment){
+ const codes=routeStations.map(stop=>stop.code);
+ const startIndex=filterFrom.value ? codes.indexOf(filterFrom.value) : 0;
+ const endIndex=filterTo.value ? codes.indexOf(filterTo.value) : codes.length-1;
+ const from=String(segment.from||segment.fromStation||segment.fromStationCode||'').trim();
+ const to=String(segment.to||segment.toStation||segment.toStationCode||'').trim();
+ const fromIndex=codes.indexOf(from), toIndex=codes.indexOf(to);
+ return [codes[Math.max(fromIndex,startIndex)]||from,codes[Math.min(toIndex,endIndex)]||to];
 }
 
 function visibleBerths(){
@@ -304,7 +319,8 @@ function showBerth(no){
  const b=berthData.find(x=>x.berthNo==no);
  let h=`<h2>Berth ${b.berthNo}</h2><p>Type: ${b.berthCode}</p>`;
  segmentsForFilter(b).forEach(s=>{
-   h+=`<div class="segment"><b>${s.from} → ${s.to}</b><br>Status: ${s.occupancy?'Occupied':'Available'}<br>Quota: ${s.quota}</div>`;
+  const [from,to]=displaySegmentBounds(s);
+  h+=`<div class="segment"><b>${from} → ${to}</b><br>Status: ${s.occupancy?'Occupied':'Available'}<br>Quota: ${s.quota}</div>`;
  });
  details.innerHTML=h;
  if(window.matchMedia('(max-width: 900px)').matches){
