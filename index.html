@@ -247,6 +247,15 @@ async function loadTrain(){
   body:JSON.stringify(payload)
  });
  const data=await r.json();
+ if(data.error){
+  trainMeta=null;
+  berthData=[];
+  trainInfo.textContent=data.error==='Chart not prepared' ? 'Chart not prepared for this train and journey date.' : data.error;
+  coachList.innerHTML='';
+  coachArea.innerHTML='';
+  total.innerText=free.innerText=occ.innerText=partial.innerText='0';
+  return;
+ }
  trainMeta=data;
 
  trainInfo.innerHTML=`🚂 ${data.trainNo} - ${data.trainName} (${data.from} → ${data.to})`;
