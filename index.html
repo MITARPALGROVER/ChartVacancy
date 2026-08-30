@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IRCTC Coach Dashboard</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;background:#f4f6f9;color:#172033}.header{background:#0f172a;color:#fff;padding:18px 24px}.header h2{margin:0;font-size:1.25rem}.search{background:#fff;padding:16px 24px;display:flex;gap:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(15,23,42,.08)}input,select,button{padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}input,select{min-width:145px}select:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}button{cursor:pointer;background:#2563eb;color:#fff;border-color:#2563eb;transition:transform .15s,filter .15s}button:hover{filter:brightness(.94)}button:active{transform:scale(.97)}.train-strip,.coach-list{padding:16px 24px;display:flex;gap:8px;flex-wrap:wrap}.train-strip{padding-bottom:0;font-weight:600}.coach-chip{background:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer;min-width:112px}.selected{outline:3px solid #2563eb}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 24px}.card{background:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 1px 4px rgba(15,23,42,.08);color:#64748b}.card h2{margin:5px 0 0;color:#172033}.main{display:flex;gap:16px;padding:0 24px 24px}.left{flex:2;min-width:0}.right{flex:1;min-width:250px}.bay{background:#fff;margin-bottom:12px;padding:14px;border-radius:12px;box-shadow:0 1px 4px rgba(15,23,42,.08)}.bay h3{margin:0 0 12px;font-size:1rem}.berths{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px}.berth{border:none;color:#fff;padding:12px 6px;border-radius:8px;font-weight:bold;min-height:58px}.free{background:#16a34a}.occupied{background:#dc2626}.partial{background:#f59e0b}.details{background:#fff;padding:16px;border-radius:12px;box-shadow:0 1px 4px rgba(15,23,42,.08)}.details h2{margin-top:0}.segment{border:1px solid #e2e8f0;margin:8px 0;padding:10px;border-radius:8px;line-height:1.45}.modal{display:none;position:fixed;inset:0;z-index:10;background:rgba(15,23,42,.55);padding:16px;align-items:flex-end}.modal.open{display:flex}.modal-card{width:min(100%,520px);max-height:82vh;overflow:auto;margin:auto auto 0;background:#fff;border-radius:18px 18px 12px 12px;padding:20px;box-shadow:0 -8px 30px rgba(15,23,42,.25);position:relative}.modal-close{position:absolute;right:14px;top:12px;background:#e2e8f0;color:#172033;border:0;border-radius:50%;width:34px;height:34px;padding:0;font-size:1.4rem;line-height:1}.modal-card .details{box-shadow:none;padding:4px 0 0}
+@media(max-width:900px){.main{flex-direction:column}.stats{grid-template-columns:repeat(2,1fr)}.right{display:none}}
+@media(max-width:600px){.header{padding:16px}.search,.train-strip,.coach-list,.stats{padding-left:16px;padding-right:16px}.search{display:grid;grid-template-columns:1fr 1fr}.search input,.search select{min-width:0;width:100%}.search button{grid-column:1/-1;width:100%}.train-strip{font-size:.92rem}.coach-list{flex-wrap:nowrap;overflow-x:auto;padding-top:12px;padding-bottom:14px}.coach-chip{flex:0 0 auto}.stats{gap:8px}.card{padding:12px}.card h2{font-size:1.35rem}.main{padding:0 16px 20px}.right{display:none}.bay{padding:12px}.berths{grid-template-columns:repeat(4,1fr);gap:7px}.berth{min-width:0;font-size:.82rem;padding:9px 3px;min-height:54px}}
+.train-picker,.station-picker{position:relative}.train-picker input,.station-picker input{width:220px}.train-options{display:none;position:absolute;top:calc(100% + 6px);left:0;width:min(440px,calc(100vw - 32px));max-height:300px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 12px 24px rgba(15,23,42,.18);z-index:20}.train-options.open{display:block}.train-option{display:block;width:100%;padding:11px 12px;background:#fff;color:#172033;border:0;border-radius:0;text-align:left}.train-option:hover{background:#eff6ff}.train-options-message{padding:12px;color:#64748b;font-size:.9rem}@media(max-width:600px){.train-picker,.station-picker{grid-column:1/-1}.train-picker input,.station-picker input{width:100%}}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 24px 16px}.filters select{min-width:175px}.filter-button{background:#fff;color:#334155;border-color:#cbd5e1}.filter-button.active{background:#2563eb;color:#fff;border-color:#2563eb}@media(max-width:600px){.filters{padding:0 16px 16px}.filters select{flex:1;min-width:140px}.filter-button{flex:1}}
+</style>
+</head>
+<body>
+<div class="header"><h2>IRCTC Coach Dashboard</h2></div>
+
+<div class="search">
+<div class="train-picker">
+<input id="trainNo" placeholder="Train number or name" autocomplete="off" aria-label="Train number or train name" aria-expanded="false" aria-controls="trainOptions">
+<div id="trainOptions" class="train-options" role="listbox"></div>
+</div>
+<div class="station-picker">
+<input id="boardingStation" disabled placeholder="Select a train first" autocomplete="off" aria-label="Boarding station" aria-expanded="false" aria-controls="boardingOptions">
+<div id="boardingOptions" class="train-options" role="listbox"></div>
+</div>
+<input id="journeyDate" type="date" aria-label="Journey date">
+<button onclick="loadTrain()">Load Train</button>
+</div>
+
+<div id="trainInfo" class="train-strip"></div>
+<div id="coachList" class="coach-list"></div>
+
+<div class="filters" id="berthFilters">
+<select id="filterFrom" disabled aria-label="Filter start station"><option>Start station</option></select>
+<select id="filterTo" disabled aria-label="Filter end station"><option>End station</option></select>
+<button type="button" class="filter-button active" data-status="all">All</button>
+<button type="button" class="filter-button" data-status="free">Vacant</button>
+<button type="button" class="filter-button" data-status="occupied">Occupied</button>
+<button type="button" class="filter-button" data-status="partial">Partial</button>
+</div>
+
+<div class="stats">
+<div class="card">Total <h2 id="total">0</h2></div>
+<div class="card">Free <h2 id="free">0</h2></div>
+<div class="card">Occupied <h2 id="occ">0</h2></div>
+<div class="card">Partial <h2 id="partial">0</h2></div>
+</div>
+
+<div class="main">
+<div class="left" id="coachArea"></div>
+<div class="right"><div id="details" class="details">Select a berth</div></div>
+</div>
+
+<div id="berthModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Berth details">
+  <div class="modal-card">
+    <button class="modal-close" type="button" aria-label="Close berth details" onclick="closeBerthModal()">&times;</button>
+    <div id="modalDetails" class="details"></div>
+  </div>
+</div>
+
+<script>
+let trainMeta=null, berthData=[], trainList=[], trainListError=false, haltList=[], selectedBoardingCode='', activeStatus='all';
+
+function trainNumber(value){
+ const match=String(value).match(/^\s*(\d{5})/);
+ return match ? match[1] : String(value).trim();
+}
+
+async function loadTrainOptions(){
+ try{
+  const r=await fetch('./train-list.txt');
+  if(!r.ok) throw new Error('Train list could not be loaded');
+  const text=await r.text();
+  trainList=(text.match(/"[^"\r\n]+"/g)||[]).map(item=>item.slice(1,-1));
+  if(!trainList.length) throw new Error('The local train list is empty or invalid');
+  renderTrainOptions();
+ }catch(error){
+  trainListError=true;
+  renderTrainOptions();
+  console.warn('Unable to load train suggestions.',error);
+ }
+}
+
+function renderTrainOptions(){
+ const query=trainNo.value.trim().toLowerCase();
+ trainOptions.innerHTML='';
+ if(!query){
+  closeTrainOptions();
+  return;
+ }
+ let message='';
+ if(trainListError) message='Unable to load the local train list. Please enter the train number.';
+ else if(!trainList.length) message='Loading train list…';
+ else{
+  const matches=trainList.filter(train=>train.toLowerCase().includes(query)).slice(0,50);
+  if(!matches.length) message='No matching trains found.';
+  matches.forEach(train=>{
+   const option=document.createElement('button');
+   option.type='button'; option.className='train-option'; option.setAttribute('role','option'); option.textContent=train;
+   option.onclick=()=>selectTrain(train);
+   trainOptions.appendChild(option);
+  });
+ }
+ if(message){const item=document.createElement('div');item.className='train-options-message';item.textContent=message;trainOptions.appendChild(item);}
+ trainOptions.classList.add('open');
+ trainNo.setAttribute('aria-expanded','true');
+}
+
+function closeTrainOptions(){
+ trainOptions.classList.remove('open');
+ trainNo.setAttribute('aria-expanded','false');
+}
+
+function setBoardingMessage(message){
+ boardingStation.value='';
+ boardingStation.placeholder=message;
+ boardingStation.disabled=true;
+ boardingOptions.innerHTML='';
+ closeBoardingOptions();
+ selectedBoardingCode='';
+ [filterFrom,filterTo].forEach(select=>{select.innerHTML=`<option>${select===filterFrom?'Start station':'End station'}</option>`;select.disabled=true;});
+ activeStatus='all';
+ document.querySelectorAll('.filter-button').forEach(button=>button.classList.toggle('active',button.dataset.status==='all'));
+}
+
+async function selectTrain(train){
+ trainNo.value=train;
+ closeTrainOptions();
+ const number=trainNumber(train);
+ if(!/^\d{5}$/.test(number)) return;
+ setBoardingMessage('Loading boarding stations…');
+ try{
+  const r=await fetch(`https://api.railradar.in/app/v1/trains/${number}?haltsOnly=true`);
+  if(!r.ok) throw new Error('Station list could not be loaded');
+  const data=await r.json();
+  const halts=(data.data?.route||[]).filter(stop=>stop.isHalt&&stop.station?.code);
+  if(!halts.length) throw new Error('No halts found');
+  haltList=halts.map(stop=>({code:stop.station.code,name:stop.station.name}));
+  boardingStation.value='';
+  boardingStation.placeholder='Type boarding station';
+  boardingStation.disabled=false;
+  populateFilterStations();
+ }catch(error){
+  setBoardingMessage('Boarding stations unavailable');
+  console.warn('Unable to load boarding stations.',error);
+ }
+}
+
+function renderBoardingOptions(){
+ const query=boardingStation.value.trim().toLowerCase();
+ boardingOptions.innerHTML='';
+ if(!query){closeBoardingOptions();return;}
+ const matches=haltList.filter(stop=>`${stop.code} ${stop.name}`.toLowerCase().includes(query));
+ if(!matches.length){
+  const message=document.createElement('div'); message.className='train-options-message'; message.textContent='No matching boarding stations found.'; boardingOptions.appendChild(message);
+ }else matches.forEach(stop=>{
+  const option=document.createElement('button');
+  option.type='button'; option.className='train-option'; option.setAttribute('role','option'); option.textContent=`${stop.code} — ${stop.name}`;
+  option.onclick=()=>{selectedBoardingCode=stop.code; boardingStation.value=`${stop.code} — ${stop.name}`; closeBoardingOptions();};
+  boardingOptions.appendChild(option);
+ });
+ boardingOptions.classList.add('open');
+ boardingStation.setAttribute('aria-expanded','true');
+}
+
+function closeBoardingOptions(){
+ boardingOptions.classList.remove('open');
+ boardingStation.setAttribute('aria-expanded','false');
+}
+
+function populateFilterStations(){
+ [filterFrom,filterTo].forEach(select=>{
+  select.innerHTML='<option value="">'+(select===filterFrom?'Start station':'End station')+'</option>';
+  haltList.forEach(stop=>{
+   const option=document.createElement('option'); option.value=stop.code; option.textContent=`${stop.code} — ${stop.name}`; select.appendChild(option);
+  });
+  select.disabled=false;
+ });
+}
+
+function segmentsForFilter(berth){
+ const start=filterFrom.value, end=filterTo.value;
+ if(!start&&!end) return berth.bsd;
+ const codes=haltList.map(stop=>stop.code);
+ const startIndex=start ? codes.indexOf(start) : 0;
+ const endIndex=end ? codes.indexOf(end) : codes.length-1;
+ if(startIndex<0||endIndex<startIndex) return [];
+ return berth.bsd.filter(segment=>{
+  const fromIndex=codes.indexOf(segment.from), toIndex=codes.indexOf(segment.to);
+  return fromIndex>=startIndex&&toIndex<=endIndex;
+ });
+}
+
+function visibleBerths(){
+ return berthData.filter(berth=>{
+  const segments=segmentsForFilter(berth);
+  return segments.length&& (activeStatus==='all'||statusOf(berth,segments)===activeStatus);
+ });
+}
+
+function applyFilters(){
+ renderStats();
+ renderCoach();
+}
+
+function configureJourneyDates(){
+ const toInputDate=offset=>{
+  const date=new Date(); date.setHours(0,0,0,0); date.setDate(date.getDate()+offset);
+  return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
+ };
+ journeyDate.min=toInputDate(-3);
+ journeyDate.max=toInputDate(1);
+ journeyDate.value=toInputDate(0);
+}
+
+function statusOf(b,segments=b.bsd){
+ let o=segments.filter(x=>x.occupancy).length;
+ if(o===0) return 'free';
+ if(o===segments.length) return 'occupied';
+ return 'partial';
+}
+
+async function loadTrain(){
+ const payload={
+  trainNo:trainNumber(trainNo.value),
+  boardingStation:selectedBoardingCode,
+  jDate:journeyDate.value
+ };
+ const r=await fetch('https://www.irctc.co.in/online-charts/api/trainComposition',{
+  method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify(payload)
+ });
+ const data=await r.json();
+ trainMeta=data;
+
+ trainInfo.innerHTML=`🚂 ${data.trainNo} - ${data.trainName} (${data.from} → ${data.to})`;
+
+ coachList.innerHTML='';
+ data.cdd.forEach(c=>{
+   const d=document.createElement('div');
+   d.className='coach-chip';
+   d.innerHTML=`<b>${c.coachName}</b><br>${c.classCode}<br>Vacant: ${c.vacantBerths}`;
+   d.onclick=()=>loadCoach(c,d);
+   coachList.appendChild(d);
+ });
+}
+
+async function loadCoach(c,el){
+ document.querySelectorAll('.coach-chip').forEach(x=>x.classList.remove('selected'));
+ el.classList.add('selected');
+
+ const payload={
+   boardingStation:selectedBoardingCode,
+   cls:c.classCode,
+   coach:c.coachName,
+   jDate:journeyDate.value,
+   remoteStation:trainMeta.remote,
+   trainNo:trainNumber(trainNo.value),
+   trainSourceStation:trainMeta.from
+ };
+
+ const r=await fetch('https://www.irctc.co.in/online-charts/api/coachComposition',{
+  method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify(payload)
+ });
+ const data=await r.json();
+ berthData=data.bdd||[];
+ renderStats();
+ renderCoach();
+}
+
+function renderStats(){
+ let f=0,o=0,p=0;
+ visibleBerths().forEach(b=>{
+   let s=statusOf(b,segmentsForFilter(b));
+   if(s==='free')f++; else if(s==='occupied')o++; else p++;
+ });
+ total.innerText=visibleBerths().length;
+ free.innerText=f; occ.innerText=o; partial.innerText=p;
+}
+
+function renderCoach(){
+ const bays={};
+ visibleBerths().forEach(b=>{
+   let k=b.cabinCoupeNameNo||'NA';
+   (bays[k]=bays[k]||[]).push(b);
+ });
+ coachArea.innerHTML='';
+ Object.keys(bays).forEach(k=>{
+   const div=document.createElement('div');
+   div.className='bay';
+   let h=`<h3>Bay ${k}</h3><div class="berths">`;
+   bays[k].forEach(b=>{
+      h+=`<button class="berth ${statusOf(b,segmentsForFilter(b))}" onclick="showBerth(${b.berthNo})">${b.berthNo}<br>${b.berthCode}</button>`;
+   });
+   h+='</div>';
+   div.innerHTML=h;
+   coachArea.appendChild(div);
+ });
+}
+
+function showBerth(no){
+ const b=berthData.find(x=>x.berthNo==no);
+ let h=`<h2>Berth ${b.berthNo}</h2><p>Type: ${b.berthCode}</p>`;
+ segmentsForFilter(b).forEach(s=>{
+   h+=`<div class="segment"><b>${s.from} → ${s.to}</b><br>Status: ${s.occupancy?'Occupied':'Available'}<br>Quota: ${s.quota}</div>`;
+ });
+ details.innerHTML=h;
+ if(window.matchMedia('(max-width: 900px)').matches){
+   modalDetails.innerHTML=h;
+   berthModal.classList.add('open');
+   berthModal.setAttribute('aria-hidden','false');
+   document.body.style.overflow='hidden';
+ }
+}
+
+function closeBerthModal(){
+ berthModal.classList.remove('open');
+ berthModal.setAttribute('aria-hidden','true');
+ document.body.style.overflow='';
+}
+
+berthModal.addEventListener('click',e=>{if(e.target===berthModal)closeBerthModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeBerthModal()});
+trainNo.addEventListener('input',renderTrainOptions);
+trainNo.addEventListener('input',()=>setBoardingMessage('Select a train first'));
+boardingStation.addEventListener('input',()=>{selectedBoardingCode='';renderBoardingOptions()});
+filterFrom.addEventListener('change',applyFilters);
+filterTo.addEventListener('change',applyFilters);
+document.querySelectorAll('.filter-button').forEach(button=>button.addEventListener('click',()=>{
+ activeStatus=button.dataset.status;
+ document.querySelectorAll('.filter-button').forEach(item=>item.classList.toggle('active',item===button));
+ applyFilters();
+}));
+document.addEventListener('click',e=>{
+ if(!e.target.closest('.train-picker'))closeTrainOptions();
+ if(!e.target.closest('.station-picker'))closeBoardingOptions();
+});
+configureJourneyDates();
+loadTrainOptions();
+</script>
+</body>
+</html>
